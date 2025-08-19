@@ -1,7 +1,10 @@
+"examples/04-todos.py"
+
 from dataclasses import dataclass
-from typing import Literal
-import pulse as ps
 from pathlib import Path
+from typing import Literal
+
+import pulse as ps
 
 TodosFilter = Literal["all", "active", "completed"]
 
