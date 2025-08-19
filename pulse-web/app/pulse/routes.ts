@@ -7,10 +7,6 @@ import {
 
 export const routes = [
   layout("pulse/_layout.tsx", [
-    layout("pulse/layouts/_layout.tsx", [
-      index("pulse/routes/index.tsx"),
-      route("task/:id", "pulse/routes/task/:id.tsx"),
-      route("settings", "pulse/routes/settings.tsx"),
-    ]),
+    index("pulse/routes/index.tsx"),
   ]),
 ] satisfies RouteConfig;

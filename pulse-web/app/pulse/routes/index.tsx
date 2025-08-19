@@ -23,7 +23,7 @@ export async function loader(args: LoaderFunctionArgs) {
   fwd.delete("content-length");
   // Ensure JSON body content type
   fwd.set("content-type", "application/json");
-  const res = await fetch("http://localhost:8001" + "/prerender/" + path, {
+  const res = await fetch("http://localhost:8000" + "/prerender/" + path, {
     method: "POST",
     headers: fwd,
     body: JSON.stringify(routeInfo),
