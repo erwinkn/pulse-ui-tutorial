@@ -1,164 +1,104 @@
-"examples/04-todos.py"
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 import pulse as ps
 
-TodosFilter = Literal["all", "active", "completed"]
+
+Filter = Literal["all", "open", "done"]
 
 
-# Makes the dataclass reactive, so that Pulse can detect when its properties are
-# mutated.
-@ps.reactive
 @dataclass
 class Todo:
     id: int
-    title: str
-    completed: bool
+    text: str
+    done: bool
 
 
 class TodosState(ps.State):
     todos: list[Todo]
-    filter: TodosFilter = "all"
+    filt: Filter = "all"
+    _owner: str  # non-reactive property
 
-    def __init__(self):
-        # self.todos gets converted into a ReactiveList automatically
+    def __init__(self, owner: str):
+        self._owner = owner
         self.todos = [
-            Todo(id=1, title="Ship Pulse demo", completed=False),
-            Todo(id=2, title="Write docs", completed=True),
+            Todo(1, "Learn Pulse", False),
+            Todo(2, "Ship demo", True),
         ]
+
+    def set_filter(self, filt: Filter):
+        self.filt = filt
+
+    def add_todo(self, text: str):
+        next_id = max((n.id for n in self.todos), default=0) + 1
+        self.todos.append(Todo(next_id, text, False))
+
+    def toggle(self, todo_id: int):
+        for n in self.todos:
+            if n.id == todo_id:
+                n.done = not n.done
 
     @ps.computed
     def filtered(self) -> list[Todo]:
-        if self.filter == "active":
-            return [t for t in self.todos if not t.completed]
-        if self.filter == "completed":
-            return [t for t in self.todos if t.completed]
+        if self.filt == "open":
+            return [n for n in self.todos if not n.done]
+        if self.filt == "done":
+            return [n for n in self.todos if n.done]
         return self.todos
 
-    def add_todo(self, title: str):
-        next_id = max([t.id for t in self.todos], default=0) + 1
-        # self.todos is a ReactiveList, so Pulse detects .append() and updates the applicaiton
-        self.todos.append(Todo(id=next_id, title=title, completed=False))
 
-    def remove(self, todo_id: int):
-        self.todos = [t for t in self.todos if t.id != todo_id]
-
-    def toggle(self, todo_id: int):
-        for t in self.todos:
-            if t.id == todo_id:
-                t.completed = not t.completed
-
-    def set_filter(self, value: TodosFilter):
-        self.filter = value
-
-
-class AddTodoState(ps.State):
-    new_title: str = ""
-
-    def __init__(self, todo_state: TodosState):
-        self._todo_state = todo_state
-
-    def on_change(self, value: str):
-        self.new_title = value
-
-    @ps.computed
-    def disabled(self) -> bool:
-        return len(self.new_title.strip()) < 3
-
-    def on_add(self):
-        if not self.disabled:
-            self._todo_state.add_todo(self.new_title)
-
-
-def TodoItem(state: TodosState, todo: Todo):
-    return ps.div(
-        ps.input(
-            type="checkbox",
-            checked=todo.completed,
-            onChange=lambda: state.toggle(todo.id),
-            className="mr-2",
-        ),
-        ps.span(
-            todo.title,
-            className=("line-through text-gray-500" if todo.completed else ""),
-        ),
-        ps.button(
-            "✕",
-            onClick=lambda: state.remove(todo.id),
-            className="ml-3 text-red-600",
-        ),
-        key=str(todo.id),
-        className="flex items-center mb-2",
-    )
+global_todos = ps.global_state(lambda: TodosState(owner="session"))
 
 
 @ps.component
 def TodosPage():
-    def setup_fn():
-        todos = TodosState()
-        add_todo = AddTodoState(todos)
-        return todos, add_todo
-
-    todos, add_todo = ps.setup(setup_fn)
-
-    return ps.div(
-        className="max-w-xl mx-auto h-screen flex flex-col justify-center items-start"
-    )[
-        ps.h2("Todos", className="text-xl font-bold mb-3"),
-        # Add
-        ps.div(
-            ps.input(
-                type="text",
-                placeholder="Add a todo...",
-                value=add_todo.new_title,
-                onChange=lambda evt: add_todo.on_change(evt["target"]["value"]),
-                className="border p-2 mr-2",
-            ),
-            ps.button(
-                "Add",
-                onClick=add_todo.on_add,
-                disabled=add_todo.disabled,
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed",
-            ),
-            className="mb-4",
-        ),
-        # Filter
-        ps.div(
+    state = global_todos()
+    return ps.div(className="max-w-md mx-auto p-4")[
+        ps.h3(f"Notes ({len(state.filtered)})", className="font-bold mb-2"),
+        ps.small(f"Owner: {state._owner}", className="text-gray-500 mb-2 block"),
+        ps.div(className="mb-3")[
             ps.button(
                 "All",
-                onClick=lambda: todos.set_filter("all"),
+                onClick=lambda: state.set_filter("all"),
                 className="mr-2 "
-                + ("bg-blue-600 text-white px-2" if todos.filter == "all" else "px-2"),
+                + ("bg-blue-600 text-white px-2" if state.filt == "all" else "px-2"),
             ),
             ps.button(
-                "Active",
-                onClick=lambda: todos.set_filter("active"),
+                "Open",
+                onClick=lambda: state.set_filter("open"),
                 className="mr-2 "
-                + (
-                    "bg-blue-600 text-white px-2"
-                    if todos.filter == "active"
-                    else "px-2"
-                ),
+                + ("bg-blue-600 text-white px-2" if state.filt == "open" else "px-2"),
             ),
             ps.button(
-                "Completed",
-                onClick=lambda: todos.set_filter("completed"),
+                "Done",
+                onClick=lambda: state.set_filter("done"),
                 className=(
-                    "bg-blue-600 text-white px-2"
-                    if todos.filter == "completed"
-                    else "px-2"
+                    "bg-blue-600 text-white px-2" if state.filt == "done" else "px-2"
                 ),
             ),
-            className="mb-4",
-        ),
-        # Todos
-        ps.div(
-            [TodoItem(todos, t) for t in todos.filtered]
-            if todos.filtered
-            else ps.p("No todos", className="italic text-gray-500"),
+            ps.button(
+                "Add sample",
+                onClick=lambda: state.add_todo(f"Note {len(state.todos) + 1}"),
+                className="ml-3 px-2 border rounded",
+            ),
+        ],
+        ps.ul(
+            [
+                ps.li(className="mb-1 flex items-center", key=str(n.id))[
+                    ps.input(
+                        type="checkbox",
+                        checked=n.done,
+                        onChange=lambda _, nid=n.id: state.toggle(nid),
+                        className="mr-2",
+                    ),
+                    ps.span(
+                        n.text,
+                        className=("line-through text-gray-500" if n.done else ""),
+                    ),
+                ]
+                for n in state.filtered
+            ]
         ),
     ]
 

@@ -191,7 +191,7 @@ wheels = [
 [[package]]
 name = "pulse"
 version = "0.1.0"
-source = { git = "https://github.com/erwinkn/pulse-ui#44a2716ea3c13f7f656b17b6b2c56773574767a7" }
+source = { git = "https://github.com/erwinkn/pulse-ui#aec144a01bc51a8b8fce4bee8ac84a8439d4edab" }
 dependencies = [
     { name = "fastapi" },
     { name = "mako" },

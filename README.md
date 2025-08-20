@@ -18,7 +18,7 @@ Go to the address given by the React app on the right, most likely http://localh
 
 The Pulse server and React app automatically reload the app if you make changes during development.
 
-> [!NOTE]
+> [!TIP]
 > This tutorial will use [Tailwind CSS](https://tailwindcss.com/) for styling. If you are not familiar with it, you can just ignore the CSS classes passed as `className`.
 
 ## 1. Defining the App
@@ -222,7 +222,7 @@ In practice, you could do everything with `ps.setup`: create your states, set up
 
 ### 4.3. Usage
 
-Let's understand how to use hooks by looking at an example. I will not use `ps.effects` here, as it will be introduced in [Effects](#9-effects).
+Let's understand how to use hooks by looking at an example. I will not use `ps.effects` here, as it will be introduced in [Effects](#11-effects).
 
 The code is available in [`examples/03-hooks.py`](./examples/03-hooks.py)
 
@@ -336,180 +336,7 @@ In this example, we can see:
 
 Now that we understand how hooks work, everything in the first state demo ([`examples/02-counter.py`](./examples/02-counter.py)) should be clear. States are one of Pulse's central features and they have more features we haven't discussed yet, so let's explore them.
 
-We're going to use a TODO list example to guide us through this section and the next. You can find the code in [`examples/04-todos.py`](./examples/04-todos.py)
-
-```python
-"examples/04-todos.py"
-
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Literal
-
-import pulse as ps
-
-TodosFilter = Literal["all", "active", "completed"]
-
-
-# Makes the dataclass reactive, so that Pulse can detect when its properties are
-# mutated.
-@ps.reactive
-@dataclass
-class Todo:
-    id: int
-    title: str
-    completed: bool
-
-
-class TodosState(ps.State):
-    todos: list[Todo]
-    filter: TodosFilter = "all"
-
-    def __init__(self):
-        # self.todos gets converted into a ReactiveList automatically
-        self.todos = [
-            Todo(id=1, title="Ship Pulse demo", completed=False),
-            Todo(id=2, title="Write docs", completed=True),
-        ]
-
-    @ps.computed
-    def filtered(self) -> list[Todo]:
-        if self.filter == "active":
-            return [t for t in self.todos if not t.completed]
-        if self.filter == "completed":
-            return [t for t in self.todos if t.completed]
-        return self.todos
-
-    def add_todo(self, title: str):
-        next_id = max([t.id for t in self.todos], default=0) + 1
-        # self.todos is a ReactiveList, so Pulse detects .append() and updates the applicaiton
-        self.todos.append(Todo(id=next_id, title=title, completed=False))
-
-    def remove(self, todo_id: int):
-        self.todos = [t for t in self.todos if t.id != todo_id]
-
-    def toggle(self, todo_id: int):
-        for t in self.todos:
-            if t.id == todo_id:
-                t.completed = not t.completed
-
-    def set_filter(self, value: TodosFilter):
-        self.filter = value
-
-
-class AddTodoState(ps.State):
-    new_title: str = ""
-
-    def __init__(self, todo_state: TodosState):
-        self._todo_state = todo_state
-
-    def on_change(self, value: str):
-        self.new_title = value
-
-    @ps.computed
-    def disabled(self) -> bool:
-        return len(self.new_title.strip()) < 3
-
-    def on_add(self):
-        if not self.disabled:
-            self._todo_state.add_todo(self.new_title)
-
-
-def TodoItem(state: TodosState, todo: Todo):
-    return ps.div(
-        ps.input(
-            type="checkbox",
-            checked=todo.completed,
-            onChange=lambda: state.toggle(todo.id),
-            className="mr-2",
-        ),
-        ps.span(
-            todo.title,
-            className=("line-through text-gray-500" if todo.completed else ""),
-        ),
-        ps.button(
-            "✕",
-            onClick=lambda: state.remove(todo.id),
-            className="ml-3 text-red-600",
-        ),
-        key=str(todo.id),
-        className="flex items-center mb-2",
-    )
-
-
-@ps.component
-def TodosPage():
-    def setup_fn():
-        todos = TodosState()
-        add_todo = AddTodoState(todos)
-        return todos, add_todo
-
-    todos, add_todo = ps.setup(setup_fn)
-
-    return ps.div(
-        className="max-w-xl mx-auto h-screen flex flex-col justify-center items-start"
-    )[
-        ps.h2("Todos", className="text-xl font-bold mb-3"),
-        # Add
-        ps.div(
-            ps.input(
-                type="text",
-                placeholder="Add a todo...",
-                value=add_todo.new_title,
-                onChange=lambda evt: add_todo.on_change(evt["target"]["value"]),
-                className="border p-2 mr-2",
-            ),
-            ps.button(
-                "Add",
-                onClick=add_todo.on_add,
-                disabled=add_todo.disabled,
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed",
-            ),
-            className="mb-4",
-        ),
-        # Filter
-        ps.div(
-            ps.button(
-                "All",
-                onClick=lambda: todos.set_filter("all"),
-                className="mr-2 "
-                + ("bg-blue-600 text-white px-2" if todos.filter == "all" else "px-2"),
-            ),
-            ps.button(
-                "Active",
-                onClick=lambda: todos.set_filter("active"),
-                className="mr-2 "
-                + (
-                    "bg-blue-600 text-white px-2"
-                    if todos.filter == "active"
-                    else "px-2"
-                ),
-            ),
-            ps.button(
-                "Completed",
-                onClick=lambda: todos.set_filter("completed"),
-                className=(
-                    "bg-blue-600 text-white px-2"
-                    if todos.filter == "completed"
-                    else "px-2"
-                ),
-            ),
-            className="mb-4",
-        ),
-        # Todos
-        ps.div(
-            [TodoItem(todos, t) for t in todos.filtered]
-            if todos.filtered
-            else ps.p("No todos", className="italic text-gray-500"),
-        ),
-    ]
-
-
-app = ps.App(
-    routes=[ps.Route("/", TodosPage)],
-    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "pulse-web"),
-)
-
-```
+We're going to use a todo list example to guide us through this section and the next: [`examples/04-todos.py`](./examples/04-todos.py)
 
 Let's break it down piece by piece.
 
@@ -518,8 +345,10 @@ Let's break it down piece by piece.
 In our example, you can see that `TodosState` stores a list of Todo objects. In order to update it, we could rebuild it and update the property. For example:
 
 ```python
-def add_todo(self, todo: Todo):
-    self.todos = [*self.todos, todo]
+class TodosState(ps.State):
+    def add_todo(self, text: str):
+        next_id = max((n.id for n in self.todos), default=0) + 1
+        self.todos.append(Todo(next_id, text, False))
 ```
 
 This works the same way as the counter updates we saw earlier.
@@ -529,35 +358,40 @@ However, Pulse supports **deep reactivity**:
 - _Reactivity_ means that when a state change happens, Pulse can propagate updates where they are needed.
 - _Deep_ means that Pulse is able to detect changes that are deeper than the property defined on the state
 
-This means `TodosState` can just use `self.todos.append()` when adding a todo, or directly update a property on a todo like `todo.completed = not todo.completed`, and Pulse will still detect the change and rerender the application accordingly.
+This means `TodosState` can just use `self.todos.append()` when adding a todo. Updating `todo.done` directly also works.
 
 ```python
-# Simplifying the code, we get this:
 class TodosState(ps.State):
-    todos: list[Todo]
-
-    def __init__(self):
-        self.todos = [...]
-        print(isinstance(self.todos, ps.ReactiveList)) # should print True
-
-    def add(self):
-        self.todos.append(Todo(id=next_id, title=title, completed=False))
-
-    def toggle_todo(self, todo_id: int):
-        for t in self.todos:
-            if t.id == todo_id:
-                t.completed = not t.completed
+    def toggle(self, todo_id: int):
+        for n in self.todos:
+            if n.id == todo_id:
+                n.done = not n.done
 ```
 
-This works because Pulse has special versions of lists, sets, and dictionaries that are applied automatically to any value stored in a state. In the constructor, you can see that `self.todos` gets converted into `ps.ReactiveList`. It behaves exactly like a regular list, except `self.todos.append()` is detected by Pulse's update system.
+Pulse has special versions of lists, sets, dictionaries, and dataclasses, that are applied automatically to any value stored in a state.
+
+You can verify it by adding this line to the TodosState constructor:
+
+```diff
+class TodosState(ps.State):
+    todos: list[Todo]
+    filt: Filter = "all"
+    _owner: str  # non-reactive property
+
+    def __init__(self, owner: str):
+        self._owner = owner
+        self.todos = [
+            Todo(1, "Learn Pulse", False),
+            Todo(2, "Ship demo", True),
+        ]
++       print("Todos is a reactive list:", isinstance(self.todos, ps.ReactiveList))
+```
 
 The same thing applies for dictionaries and sets. The transformation is also applied recursively, so all nested lists, sets, and dictionaries get converted as well.
 
-For the `Todo` class itself, you may have noticed it is decorated with `@ps.reactive`. This function converts the class into a reactive dataclass, allowing Pulse to detect changes like `t.completed = not t.completed`. Currently, this has to be done manually on the class definition, but I'm working on automating this conversion.
+Pulse is also able to convert dataclasses and thus makes the `Todo` class reactive as well. In general, it is recommended to use dataclasses to define your data structures when working with Pulse.
 
-In general, it is recommended that any custom data structure within a state property uses a dataclass tagged with `@ps.reactive`.
-
-Overall, this system exists to make Pulse work like regular Python, except all changes are detected and used to update the application.
+Overall, this system exists to make Pulse state usable like regular Python, except all changes are detected and update the application.
 
 ### 5.2. Computeds
 
@@ -565,15 +399,12 @@ Another new feature introduced here is the usage of **computeds**. Computeds are
 
 ```python
 class TodosState(ps.State):
-    todos: list[Todo]
-    filter: TodosFilter = "all"
-
     @ps.computed
     def filtered(self) -> list[Todo]:
-        if self.filter == "active":
-            return [t for t in self.todos if not t.completed]
-        if self.filter == "completed":
-            return [t for t in self.todos if t.completed]
+        if self.filt == "open":
+            return [n for n in self.todos if not n.done]
+        if self.filt == "done":
+            return [n for n in self.todos if n.done]
         return self.todos
 ```
 
@@ -639,7 +470,7 @@ It's pretty common to require some kind of global state, that persists as users 
 
 However, `TodosState` is tied to the page and we currently have no way of sharing it across pages.
 
-Besides storing our todos in a database, which will have to wait until we discuss [async](#10-async), an easy way to solve this would be to have a global `TodosState` instance.
+Besides storing our todos in a database, which will have to wait until we discuss [async](#9-async), an easy way to solve this would be to have a global `TodosState` instance.
 
 The natural way to write it would be:
 
@@ -665,7 +496,7 @@ def TodosPage():
 
 `ps.global_state(TodosState)` creates a function which returns the global state instance for the current user session, providing automatic isolation.
 
-> [!INFO]
+> [!NOTE]
 > Pulse currently does not support sharing a state instance between user sessions. This is a planned feature to enable real-time collaboration, but it has not been developed and tested yet. Do not try to create a single state instance to use across sessions, you will encounter errors.
 
 ## 6. Events and callbacks
@@ -723,6 +554,9 @@ Note that Pulse is able to wrap React components (see [Components](#7-components
 
 Also, we have seen that callbacks in Pulse can decide to receive their arguments or not. The rule here is: **a Pulse callback can take no argument or all its arguments.**
 
+> [!WARNING]
+> If a React component expects a synchronous callback that returns a value, Pulse will not be able to handle this scenario. By definition, a Pulse callback has to reach out over the network and is thus asynchronous. There is currently no support for returning values from Python to JavaScript. You may need to write a custom React component to achieve what you need.
+
 ## 7. Components
 
 Another Pulse feature we have seen multiple times already is Pulse's component system. So far, we have used `@ps.component` on the render function for our pages. We have also mentioned that Pulse hooks can be called _once_ per component.
@@ -769,6 +603,10 @@ def ToggleDemo():
     )
 ```
 
+Currently, Pulse rerenders the full application on every state change. Soon, Pulse will be optimized to only rerender the components affected by the state change.
+
+---
+
 By default, a component's identity is tied to its position in the Pulse element tree. In the example above, the two toggles are identified by their position.
 
 However, in cases where components may change position, for example when iterating over a list or when the user can reorder items, we want to preserve a component's state even if it moves around. For this, we can use **component keys**.
@@ -777,114 +615,7 @@ However, in cases where components may change position, for example when iterati
 
 Keys can be added to a component by adding a keyword argument named `key`. It generally should default to None, as a component should be usable with or without a key.
 
-Here is an example of a keyed vs. unkeyed scenario ([`examples/06-component-keys.py`](./examples/06-component-keys.py))
-
-```python
-"examples/06-component-keys.py"
-from pathlib import Path
-import pulse as ps
-
-
-class ListState(ps.State):
-    items: list[dict]
-    new_label: str = ""
-
-    def __init__(self):
-        self.items = [
-            {"id": 1, "label": "First"},
-            {"id": 2, "label": "Second"},
-        ]
-
-    def prepend(self):
-        next_id = max([i["id"] for i in self.items], default=0) + 1
-        self.items.insert(0, {"id": next_id, "label": f"Item {next_id}"})
-
-    def remove(self, tid: int):
-        self.items = [i for i in self.items if i["id"] != tid]
-
-
-class ItemState(ps.State):
-    checked: bool = False
-    note: str = ""
-
-
-@ps.component
-def Item(label: str, onRemove, key=None):
-    state = ps.states(ItemState)
-    return ps.div(className="flex items-center mb-2")[
-        ps.input(
-            type="checkbox",
-            checked=state.checked,
-            onChange=lambda: setattr(state, "checked", not state.checked),
-            className="mr-2",
-        ),
-        ps.input(
-            type="text",
-            value=state.note,
-            onChange=lambda e: setattr(state, "note", e["target"]["value"]),
-            placeholder="note...",
-            className="border p-1 mr-2",
-        ),
-        ps.span(label, className="mr-2"),
-        ps.button(
-            "Remove",
-            onClick=onRemove,
-            className="px-2 py-1 border border-red-600 text-red-600 rounded hover:bg-red-600 hover:text-white",
-        ),
-    ]
-
-
-@ps.component
-def KeysDemo():
-    state = ps.states(ListState)
-    # Prepend new items to the beginning to demonstrate diffing
-    controls = ps.div(className="mb-4")[
-        ps.button(
-            "Prepend item",
-            onClick=state.prepend,
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mr-3",
-        ),
-    ]
-
-    # Unkeyed: internal state will shift when items are prepended
-    unkeyed = ps.div(className="p-3 border rounded mr-6")[
-        ps.h4("Unkeyed (state will shift)"),
-        [
-            Item(
-                item["label"],
-                onRemove=lambda tid=item["id"]: state.remove(tid),
-            )
-            for item in state.items
-        ],
-    ]
-
-    # Keyed: internal state stays with the same logical item
-    keyed = ps.div(className="p-3 border rounded")[
-        ps.h4("Keyed (state preserved)"),
-        [
-            Item(
-                item["label"],
-                onRemove=lambda tid=item["id"]: state.remove(tid),
-                key=item["id"],  # critical difference
-            )
-            for item in state.items
-        ],
-    ]
-
-    return ps.div(
-        className="w-fit mx-auto h-screen flex flex-col justify-center items-start"
-    )[
-        ps.h3("Keys vs. No Keys"),
-        controls,
-        ps.div(unkeyed, keyed, className="flex"),
-    ]
-
-
-app = ps.App(
-    routes=[ps.Route("/", KeysDemo)],
-    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "pulse-web"),
-)
-```
+Here is an example of a keyed vs. unkeyed scenario: [`examples/06-component-keys.py`](./examples/06-component-keys.py)
 
 Run this example, update the note and checkbox of the existing two items, and click "Prepend item".
 
@@ -941,7 +672,6 @@ The second thing is that it is recommended to use the `ps.For` construct to work
 ps.For(items, lambda x: ps.div(x))
 ```
 
-```
 Python iterables can often create subtle bugs due to [late binding semantics](https://docs.python-guide.org/writing/gotchas/#late-binding-closures).
 
 For a demonstration, run [examples/08-iterable-late-binding.py]. Try clicking "Remove A" on the left (bad version). You should see that it removes C instead.
@@ -954,7 +684,101 @@ The issue is that in the bad version, all the `onClick` callbacks get a referenc
 
 ## 9. Effects
 
+> [!WARNING]
+> This section covers the essentials, but is still pretty light. Effects are powerful and essential, but also frequent sources of subtle bugs. Generally, you should try to avoid them in favor of other Pulse features, like computeds or async support.
+
+Effects are the last piece of Pulse's reactive system. They are meant to do _something_ in response to a state change. This _something_ can be anything and happens outside rendering.
+
+Effects are defined by decorating a function with `@ps.effect`. When an effect is created, Pulse runs it once and tracks its dependencies. When one of the dependencies changes, the effect reruns.
+
+Effects can optionally return a _cleanup_ function that is called before each new effect run and when the effect is disposed. This is useful to clean up anything you may have set up during the last effect execution.
+
+The simplest example is logging on state changes: [`examples/09-effects.py`](./examples/09-effects.py).
+
+```python
+class ToggleState(ps.State):
+    enabled: bool = True
+
+    def __init__(self, label: str):
+        self._label = label
+
+    def toggle(self):
+        print(f"[toggle] {self._label}")
+        self.enabled = not self.enabled
+
+    @ps.effect
+    def log_toggle_change(self):
+        # Reading self.enabled registers it as a dependency
+        print(f"[effect] {self._label}, enabled = {self.enabled}")
+
+        # This will be executed before each subsequent effect execution and upon
+        # effect disposal (when the state is not used anymore).
+        def cleanup():
+            print(f"[cleanup] {self._label}")
+
+        return cleanup
+```
+
+In this example, the sequence of events is:
+- Initial render, effect is created
+- Effect runs for the 1st time, prints "[effect] ..." and registers its cleanup function.
+- Click on toggle
+- Application rerenders
+- Effect triggers again: the cleanup from the 1st time runs, the effect runs a 2nd time, prints "[effect] ...", and returns a cleanup again.
+
+The full demo also showcases that the effects on separate states behave independently.
+
+Generally, it is recommended to define effects either on a state or in `ps.setup`. Otherwise, you risk creating a new effect on every render and they will all accumulate on top of one another.
+
+Following this guideline, effects are automatically disposed when the state is disposed, or when the component that created them in `ps.setup` is removed from the UI.
+
+
+Effects always run after rendering. They are something that happens _on the side_, once rendering is done.
+
+> [!TIP]
+> With Pulse computeds and async support, effects should be rarely needed, besides logging for debugging purposes.
+> [!TIP]
+> If you come from the React world and are accustomed to `useEffect`, you should still try to use effects as little as possible. Most use cases for effects are covered by Pulse's built-in support for asynchronous work.
+
 ## 10. Async
+
+Nearly all real-world applications contain async workloads: network requests, database queries, etc.
+
+Pulse comes with built-in support for common asynchronous patterns.
+
+- Async event handlers
+- Queries
+- Async effects (WIP, soon)
+
+### 10.1. Async callbacks
+
+Pulse callbacks can be asynchronous out-of-the-box. Everything works as you expect, nothing special is needed.
+
+The nice thing is that all synchronous state updates are automatically batched.
+
+Example: [`examples/10-batch-updates.py`](./examples/10-batch-updates.py)
+
+```python
+class CounterState(ps.State):
+    count: int = 0
+
+    async def increment_twice(self):
+        await asyncio.sleep(1)
+        # Two separate state updates.
+        # They are automatically batched, the app only rerenders once.
+        self.count += 1
+        self.count += 1
+        await asyncio.sleep(1)
+        # The app rerenders again after these two updates
+        self.count += 1
+        self.count += 1
+```
+
+### 10.2. Queries
+
+### 10.3. Async effects
+
+Not implemented yet!
 
 ## 11. Routing
 
@@ -965,7 +789,7 @@ The issue is that in the bad version, all the `onClick` callbacks get a referenc
 
 ## 12. Utilities
 
-- `ps.route_info`: returns information about the current route (URL). Often used to get query or path parameters for dynamic routes. See [Routing](#11-routing).
+- `ps.route_info`: returns information about the current route (URL). Often used to get query or path parameters for dynamic routes. See [Routing](#10-routing).
 - `ps.session_context`: returns a shared session context
 - `ps.navigate`:
 - `ps.call_api`
@@ -992,4 +816,7 @@ TODO:
 ## 15. Cookbook
 
 - Using `ps.setup` for stable callbcaks
+
+```
+
 ```
