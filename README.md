@@ -720,6 +720,7 @@ class ToggleState(ps.State):
 ```
 
 In this example, the sequence of events is:
+
 - Initial render, effect is created
 - Effect runs for the 1st time, prints "[effect] ..." and registers its cleanup function.
 - Click on toggle
@@ -731,7 +732,6 @@ The full demo also showcases that the effects on separate states behave independ
 Generally, it is recommended to define effects either on a state or in `ps.setup`. Otherwise, you risk creating a new effect on every render and they will all accumulate on top of one another.
 
 Following this guideline, effects are automatically disposed when the state is disposed, or when the component that created them in `ps.setup` is removed from the UI.
-
 
 Effects always run after rendering. They are something that happens _on the side_, once rendering is done.
 
@@ -748,7 +748,7 @@ Pulse comes with built-in support for common asynchronous patterns.
 
 - Async event handlers
 - Queries
-- Async effects (WIP, soon)
+- Async effects
 
 ### 10.1. Async callbacks
 
@@ -776,9 +776,132 @@ class CounterState(ps.State):
 
 ### 10.2. Queries
 
+Pulse has a built-in primitive for data queries. Currently it supports the following features:
+
+- Built-in loading and error states
+- Automatically detect dependencies (unkeyed mode)
+- Use an explicit query key to trigger reruns (keyed mode)
+- Set the initial data
+- Manually refetch the query
+
+Eventually this feature set will be expanded to look like a full query library, like TanStack Query or SWR in the JavaScript ecosystem.
+
+You can see most of these features in our query example: [`examples/11-queries.py`](./examples/11-queries.py).
+
+Here's a simplified version. The example demonstrates an unkeyed and a keyed query.
+
+```python
+class QueryDemoState(ps.State):
+    user_id: int = 1
+
+    # Default mode: unkeyed, auto-tracks dependencies
+    @ps.query
+    async def user(self) -> dict:
+        # Simulate async work
+        await asyncio.sleep(1)
+        return {"id": self.user_id, "name": f"User {self.user_id}"}
+
+@ps.component
+def QueryDemo():
+    state = ps.states(QueryDemoState)
+
+    def prev():
+        state.user_id = max(1, state.user_id - 1)
+
+    def next_():
+        state.user_id = state.user_id + 1
+
+    return ps.div(
+        ps.h2("Query Demo", className="text-2xl font-bold mb-4"),
+        ps.p(f"User ID: {state.user_id}"),
+        ps.div(
+            ps.h3("Query", className="text-xl font-semibold mt-4"),
+            ps.p(
+                "Loading..."
+                if state.user.is_loading
+                else f"Data: {state.user.data}",
+                className="mb-2",
+            ),
+            ps.div(
+                ps.button("Prev", onClick=prev, className="btn-secondary mr-2"),
+                ps.button("Next", onClick=next_, className="btn-secondary mr-2"),
+                ps.button(
+                    "Refetch keyed",
+                    onClick=state.user.refetch,
+                    className="btn-primary",
+                ),
+                className="mb-4",
+            ),
+            className="mb-6 p-3 rounded bg-white shadow",
+        ),
+    )
+```
+
+Here are the properties and methods available on a query:
+- `data`: the data returned by the query function, or `None` if not loaded yet
+- `is_loading`: whether the query is currently loading
+- `is_error`: whether the query failed with an error
+- `has_loaded`: whether the query has finished loading at least once
+- `refetch()`: manually trigger the query to run again
+- `set_data(...)`: directly set the query data, bypassing the query function
+- `set_initial_data(...)`: set initial data that will be returned before first load completes
+
+The keyed mode is useful to more finely control when a query reruns. It will also be used to allow targeting a query by its key in future utilities.
+
+Queries currently have to be bound to a state.
+
 ### 10.3. Async effects
 
-Not implemented yet!
+Effects can also be async. They're useful for background tasks, periodic updates, or any operation that needs to await something.
+
+See the example in [`example/12-async-effects.py`](./examples/12-async-effects.py).
+
+```python
+import pulse as ps
+import asyncio
+
+class AsyncEffectState(ps.State):
+    running: bool = False
+    step: int = 0
+
+    @ps.effect(lazy=True)
+    async def ticker(self):
+        # Simulate writes across awaits
+        await asyncio.sleep(0.5)
+        with ps.Untrack():
+            self.step += 1
+            self.step += 1
+        await asyncio.sleep(0.5)
+        # Keep going by rescheduling itself through a signal
+        self.step += 1
+
+    def start(self):
+        # Manually schedule an effect
+        self.ticker.schedule()
+        self.running = True
+
+    def stop(self):
+        self.ticker.cancel()
+        self.running = False
+
+
+@ps.component
+def AsyncEffectDemo():
+    state = ps.states(AsyncEffectState)
+
+    return ps.div(
+        ps.div(
+            ps.button(
+                "Start async effect", onClick=state.start, className="btn-secondary"
+            ),
+            ps.button("Stop", onClick=state.stop, className="btn-secondary ml-2"),
+            className="mb-2",
+        ),
+        ps.p(f"Running: {state.running}", className="text-sm"),
+        ps.p(f"Step: {state.step}", className="text-sm"),
+    )
+```
+
 
 ## 11. Routing
 
@@ -786,13 +909,18 @@ Not implemented yet!
 - `ps.navigate`
 - `ps.Outlet`
 - `ps.Link`
+- `ps.route_info`: returns information about the current route (URL). Often used to get query or path parameters for dynamic routes
+- `ps.navigate`:
+
+# 12. Sessions
+
+- `ps.session`: returns a shared session context
 
 ## 12. Utilities
 
-- `ps.route_info`: returns information about the current route (URL). Often used to get query or path parameters for dynamic routes. See [Routing](#10-routing).
-- `ps.session_context`: returns a shared session context
-- `ps.navigate`:
 - `ps.call_api`
+- `ps.Untrack` / `ps.Batch`
+- ... all other hooks
 
 ## 13. Common gotchas
 
