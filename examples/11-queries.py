@@ -47,12 +47,12 @@ def QueryDemo():
                 className="mb-2",
             ),
             ps.div(
-                ps.button("Prev", onClick=prev, className="btn-secondary mr-2"),
-                ps.button("Next", onClick=next_, className="btn-secondary mr-2"),
+                ps.button("Prev", onClick=prev, className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"),
+                ps.button("Next", onClick=next_, className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"),
                 ps.button(
                     "Refetch keyed",
                     onClick=state.user_keyed.refetch,
-                    className="btn-primary",
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600",
                 ),
                 className="mb-4",
             ),
@@ -70,7 +70,7 @@ def QueryDemo():
                 ps.button(
                     "Refetch unkeyed",
                     onClick=state.user_unkeyed.refetch,
-                    className="btn-primary",
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600",
                 ),
                 className="mb-2",
             ),
