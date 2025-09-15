@@ -18,6 +18,8 @@ Go to the address given by the React app on the right, most likely http://localh
 
 The Pulse server and React app automatically reload the app if you make changes during development.
 
+If you need to install the latest package versions after an update to this tutorial, run `uv sync` in the root folder and `bun i` in the `pulse-web` folder.
+
 > [!TIP]
 > This tutorial will use [Tailwind CSS](https://tailwindcss.com/) for styling. If you are not familiar with it, you can just ignore the CSS classes passed as `className`.
 
@@ -617,7 +619,7 @@ Keys can be added to a component by adding a keyword argument named `key`. It ge
 
 Here is an example of a keyed vs. unkeyed scenario: [`examples/06-component-keys.py`](./examples/06-component-keys.py)
 
-Run this example, update the note and checkbox of the existing two items, and click "Prepend item".
+Run this example, write "test" in the first two items, click their checkbox, and click "Prepend item".
 
 You will notice that in the keyed version, the existing items properly shift down when a new item is added at the beginning of the list, their input and checkbox state moving with them.
 

@@ -2,6 +2,7 @@ from pathlib import Path
 import pulse as ps
 import asyncio
 
+
 class QueryDemoState(ps.State):
     user_id: int = 1
 
@@ -12,7 +13,7 @@ class QueryDemoState(ps.State):
         await asyncio.sleep(1)
         return {"id": self.user_id, "name": f"User {self.user_id}"}
 
-    # Keyed mode, uses explicit dependencies to know when to rerun. This is useful 
+    # Keyed mode, uses explicit dependencies to know when to rerun. This is useful
     @ps.query
     async def user_keyed(self) -> dict:
         # Simulate async work
@@ -22,7 +23,6 @@ class QueryDemoState(ps.State):
     @user_keyed.key
     def _user_key(self):
         return ("user", self.user_id)
-
 
 
 @ps.component
@@ -47,8 +47,16 @@ def QueryDemo():
                 className="mb-2",
             ),
             ps.div(
-                ps.button("Prev", onClick=prev, className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"),
-                ps.button("Next", onClick=next_, className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"),
+                ps.button(
+                    "Prev",
+                    onClick=prev,
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2",
+                ),
+                ps.button(
+                    "Next",
+                    onClick=next_,
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2",
+                ),
                 ps.button(
                     "Refetch keyed",
                     onClick=state.user_keyed.refetch,

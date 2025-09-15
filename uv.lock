@@ -190,7 +190,7 @@ wheels = [
 
 [[package]]
 name = "pulse-framework"
-version = "0.1.5"
+version = "0.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastapi" },
@@ -202,9 +202,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/c1/3e3679904b787c28a6ab3d4f9ba50b79776aeb0ad9b8563bc14ee050a7b6/pulse_framework-0.1.5.tar.gz", hash = "sha256:702ba1a60e6bdfc3dbd6c16cbe4587ba4530575d862d2ba3d7931415ca48d505", size = 80725, upload-time = "2025-09-12T17:14:11.492Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/ee/da9554d341d227f49f3e2af03d775b017fe04ba7c6aa8c2d165fb691f6da/pulse_framework-0.1.6.tar.gz", hash = "sha256:9bca0738fd0592a95ca5bb43ff06385370d175bb732067139d3e29859019db8a", size = 80820, upload-time = "2025-09-12T21:12:33.159Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/cc/3cd31fa8468ed83d83ac3ef78c6f63f1db62acbb5d766096562ec9152231/pulse_framework-0.1.5-py3-none-any.whl", hash = "sha256:992c7a4133cfd0ad799c53d2713ee5ff7f64fc4a3aac9934478ec34b25fa3685", size = 93277, upload-time = "2025-09-12T17:14:10.258Z" },
+    { url = "https://files.pythonhosted.org/packages/36/11/7d6495686b1636632a2714e4120b0deb9ff4953ef6f3bea9125e60f36727/pulse_framework-0.1.6-py3-none-any.whl", hash = "sha256:68a0763ffcca777500688a1c5499e9e14bc43a80eb03ffdd6aa49414773d2d53", size = 93351, upload-time = "2025-09-12T21:12:31.844Z" },
 ]
 
 [[package]]
@@ -216,7 +216,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pulse-framework", specifier = ">=0.1.5" }]
+requires-dist = [{ name = "pulse-framework", specifier = ">=0.1.6" }]
 
 [[package]]
 name = "pydantic"
