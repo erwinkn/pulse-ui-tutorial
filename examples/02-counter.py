@@ -51,5 +51,5 @@ def Counter():
 
 app = ps.App(
     routes=[ps.Route("/", Counter)],
-    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "pulse-web"),
+    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "web"),
 )

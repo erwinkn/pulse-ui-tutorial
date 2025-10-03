@@ -49,5 +49,5 @@ def SetupEffectDemo():
 
 app = ps.App(
     routes=[ps.Route("/", SetupEffectDemo)],
-    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "pulse-web"),
+    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "web"),
 )

@@ -190,11 +190,13 @@ wheels = [
 
 [[package]]
 name = "pulse-framework"
-version = "0.1.6"
+version = "0.1.22"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastapi" },
     { name = "mako" },
+    { name = "python-dateutil" },
+    { name = "python-multipart" },
     { name = "python-socketio" },
     { name = "rich" },
     { name = "textual" },
@@ -202,9 +204,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/34/ee/da9554d341d227f49f3e2af03d775b017fe04ba7c6aa8c2d165fb691f6da/pulse_framework-0.1.6.tar.gz", hash = "sha256:9bca0738fd0592a95ca5bb43ff06385370d175bb732067139d3e29859019db8a", size = 80820, upload-time = "2025-09-12T21:12:33.159Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/c8/0be31e88a57f4f2a5b185bdfce8c709a3e2ded867b59e5b69976841b07be/pulse_framework-0.1.22.tar.gz", hash = "sha256:cc37a7d27bd975849c9f1b42598edb8a44952af7208574e495c381da393b9ff3", size = 119154, upload-time = "2025-10-02T22:02:29.368Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/11/7d6495686b1636632a2714e4120b0deb9ff4953ef6f3bea9125e60f36727/pulse_framework-0.1.6-py3-none-any.whl", hash = "sha256:68a0763ffcca777500688a1c5499e9e14bc43a80eb03ffdd6aa49414773d2d53", size = 93351, upload-time = "2025-09-12T21:12:31.844Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/53/f7fada38aa1e81c6590fa0ee303f292b49574d1ede022ef444b01dc52395/pulse_framework-0.1.22-py3-none-any.whl", hash = "sha256:c89b06a22884dfcc69b17cbdfab4937f3681c87e5181ce47613b8279d0f6826c", size = 142329, upload-time = "2025-10-02T22:02:28.231Z" },
 ]
 
 [[package]]
@@ -216,7 +218,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pulse-framework", specifier = ">=0.1.6" }]
+requires-dist = [{ name = "pulse-framework", specifier = ">=0.1.20" }]
 
 [[package]]
 name = "pydantic"
@@ -271,6 +273,18 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dateutil"
+version = "2.9.0.post0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload-time = "2024-03-01T18:36:20.211Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
+]
+
+[[package]]
 name = "python-engineio"
 version = "4.12.2"
 source = { registry = "https://pypi.org/simple" }
@@ -280,6 +294,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ba/0b/67295279b66835f9fa7a491650efcd78b20321c127036eef62c11a31e028/python_engineio-4.12.2.tar.gz", hash = "sha256:e7e712ffe1be1f6a05ee5f951e72d434854a32fcfc7f6e4d9d3cae24ec70defa", size = 91677, upload-time = "2025-06-04T19:22:18.789Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/fa/df59acedf7bbb937f69174d00f921a7b93aa5a5f5c17d05296c814fff6fc/python_engineio-4.12.2-py3-none-any.whl", hash = "sha256:8218ab66950e179dfec4b4bbb30aecf3f5d86f5e58e6fc1aa7fde2c698b2804f", size = 59536, upload-time = "2025-06-04T19:22:16.916Z" },
+]
+
+[[package]]
+name = "python-multipart"
+version = "0.0.20"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/87/f44d7c9f274c7ee665a29b885ec97089ec5dc034c7f3fafa03da9e39a09e/python_multipart-0.0.20.tar.gz", hash = "sha256:8dd0cab45b8e23064ae09147625994d090fa46f5b0d1e13af944c331a7fa9d13", size = 37158, upload-time = "2024-12-16T19:45:46.972Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/58/38b5afbc1a800eeea951b9285d3912613f2603bdf897a4ab0f4bd7f405fc/python_multipart-0.0.20-py3-none-any.whl", hash = "sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104", size = 24546, upload-time = "2024-12-16T19:45:44.423Z" },
 ]
 
 [[package]]
@@ -327,6 +350,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b0/d4/bfa032f961103eba93de583b161f0e6a5b63cebb8f2c7d0c6e6efe1e3d2e/simple_websocket-1.1.0.tar.gz", hash = "sha256:7939234e7aa067c534abdab3a9ed933ec9ce4691b0713c78acb195560aa52ae4", size = 17300, upload-time = "2024-10-10T22:39:31.412Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/52/59/0782e51887ac6b07ffd1570e0364cf901ebc36345fea669969d2084baebb/simple_websocket-1.1.0-py3-none-any.whl", hash = "sha256:4af6069630a38ed6c561010f0e11a5bc0d4ca569b36306eb257cd9a192497c8c", size = 13842, upload-time = "2024-10-10T22:39:29.645Z" },
+]
+
+[[package]]
+name = "six"
+version = "1.17.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
 
 [[package]]

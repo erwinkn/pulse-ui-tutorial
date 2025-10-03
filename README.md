@@ -7,7 +7,7 @@ Welcome to the Pulse tutorial! In this guide, we'll work through examples that c
 - [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/)
 - [Install Bun](https://bun.com/docs/installation)
 - Run `uv sync` to install Python dependencies
-- Run `cd pulse-web && bun i` to install JavaScript dependencies
+- Run `cd web && bun i` to install JavaScript dependencies
 - Activate the Python virtual environment:
   - Linux/macOS: `source .venv/bin/activate`
   - Windows: `.venv\Scripts\Activate`
@@ -18,7 +18,7 @@ Go to the address given by the React app on the right, most likely http://localh
 
 The Pulse server and React app automatically reload the app if you make changes during development.
 
-If you need to install the latest package versions after an update to this tutorial, run `uv sync` in the root folder and `bun i` in the `pulse-web` folder.
+If you need to install the latest package versions after an update to this tutorial, run `uv sync` in the root folder and `bun i` in the `web` folder.
 
 > [!TIP]
 > This tutorial will use [Tailwind CSS](https://tailwindcss.com/) for styling. If you are not familiar with it, you can just ignore the CSS classes passed as `className`.
@@ -49,7 +49,7 @@ def welcome():
 
 app = ps.App(
     routes=[ps.Route("/", welcome)],
-    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "pulse-web"),
+    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "web"),
 )
 ```
 
@@ -317,7 +317,7 @@ def HooksDemo():
 
 app = ps.App(
     routes=[ps.Route("/", HooksDemo)],
-    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "pulse-web"),
+    codegen=ps.CodegenConfig(web_dir=Path(__file__).parent.parent / "web"),
 )
 ```
 
@@ -333,6 +333,113 @@ In this example, we can see:
 - Using `ps.setup` with a function that takes in arguments. The function will be called once, its result stored and returned on every render. Arguments to the function can be passed to `ps.setup()` after the function.
   - Here, we use it to create a `DebugState`, essentially doing the same thing as `ps.states`
   - This is useful if you have more complex initialization needs. See the [Cookbook](#15-cookbook) for usage examples.
+
+### 4.4 Hook keys
+
+The three main hooks (`setup`, `states`, and `effects`) accept an optional `key` argument.
+
+If the key changes, the hooks will rerun, which results in the following:
+
+- `setup`: the setup function reruns. States and effects created in the previous execution of the setup function are cleaned up.
+- `states`: disposes the previous set of states and creates new ones, either by directly taking a state object passed as argument, or running the functions that were passed as arguments.
+- `effects`: disposes the previous set of effects and creates new ones, based on the provided functions.
+
+Keys are compared using the `!=` operator and thus have to support it. It is recommended to only use primitive values (strings, numbers, booleans) or tuples of primitive values as keys.
+
+### 4.5 `stable` hook
+
+In addition to the main hooks, Pulse has another hook: `stable`. The stable hook works a bit differently: it gives you a way to always access the latest value of a given variable.
+
+```python
+@ps.component
+def Example():
+    # `stable` is always used with a key
+    # 1. key + value -> stores the value, returns a constant reference
+    ref = ps.stable("key", value)
+    # `ref` is always the same function on every render
+    ref() # <- returns the latest `value` for `key`
+
+    # 2. Just the key -> returns the value (or errors if there's none)
+    ps.stable("key") # same thing as calling `ref()` above
+
+    # If you pass a function or callable object, `ref` is a constant function
+    # that takes the same arguments and directly returns the result
+    def my_function(a: int, b: int):
+        return a + b
+
+    fn_ref = ps.stable("my_function", my_function)
+    # You can use `fn_ref` directly like `my_function`
+    fn_ref(2, 3) # returns 5
+    # This pattern is just designed to be more convenient than `fn_ref()(2,3)`
+```
+
+Why do you need this? Here's a motivating example.
+
+Let's say we have a component that allows the user to edit a string and, once the edits are finalized, save them. In practice, this component would implement some editing or validation logic and only allow finalizing the edits if they match certain criteria.
+
+The basic implementation would look like this:
+
+```python
+
+class EditorState(ps.State):
+    value: str
+
+    def __init__(self, initial: str, on_finalized: Callable[[str], None]):
+        self.value = initial
+        self._on_finalized = on_finalized
+
+    # editing and validation methods...
+
+    def finalize(self):
+        self._on_finalized(self.value)
+
+@ps.component
+def Editor(value: str, on_finalized: Callable[[str], None]):
+    st = ps.states(EditorState(value, on_finalized))
+    # do stuff, render the component
+```
+
+But if you're building `Editor` to be a reusable component, what happens if `on_finalized` changes? For example, `Editor` could be used like this:
+
+```python
+@ps.component
+def EditorUser():
+    def on_finalized():
+        # save the value, do something
+        ...
+
+    return Editor(value="", on_finalized=on_finalized)
+```
+
+In this case, a new `on_finalized` function is created every time `EditorUser` renders. So how do you make sure that `EditorState` calls the latest version of `on_finalized` that has been given to the component?
+
+Using `stable`, it's pretty easy:
+
+```python
+class EditorState(ps.State):
+    value: str
+
+    def __init__(self, initial: str, on_finalized: Callable[[str], None]):
+        self.value = initial
+        self._on_finalized = on_finalized
+
+    # editing and validation methods...
+
+    def finalize(self):
+        self._on_finalized(self.value)
+
+@ps.component
+def Editor(value: str, on_finalized: Callable[[str], None]):
+    on_finalized = ps.stable("on_finalized", on_finalized)
+    st = ps.states(EditorState(value, on_finalized))
+    # do stuff, render the component
+```
+
+As mentioned above, `stable` works especially well with functions, as it's the most common use case. This change didn't even require updating `EditorState`, as the return value of `ps.stable` is a function that takes the same arguments but whose reference doesn't change.
+
+### 4.6. Custom hooks
+
+TODO. Pulse has a core hook system that is used to define all the hooks described above. It can also be leveraged by the user to implement their own hooks. The hook system and implementations can be found in [`packages/pulse/src/pulse/hooks`](https://github.com/erwinkn/pulse-ui/tree/main/packages/pulse/src/pulse/hooks).
 
 ## 5. State (part II)
 
@@ -840,6 +947,7 @@ def QueryDemo():
 ```
 
 Here are the properties and methods available on a query:
+
 - `data`: the data returned by the query function, or `None` if not loaded yet
 - `is_loading`: whether the query is currently loading
 - `is_error`: whether the query failed with an error
@@ -903,7 +1011,6 @@ def AsyncEffectDemo():
         ps.p(f"Step: {state.step}", className="text-sm"),
     )
 ```
-
 
 ## 11. Routing
 
